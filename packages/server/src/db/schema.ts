@@ -1,3 +1,4 @@
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { pgTable, serial, text, timestamp, integer, varchar } from 'drizzle-orm/pg-core';
 
 // Collect Item table
@@ -11,3 +12,6 @@ export const items = pgTable('items', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export type Item = InferSelectModel<typeof items>;
+export type ItemInsert = InferInsertModel<typeof items>;
