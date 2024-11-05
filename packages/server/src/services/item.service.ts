@@ -3,7 +3,7 @@ import { items, type Item, type ItemInsert } from '../db/schema';
 import { eq, like, desc, sql, and } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
-import glob from 'glob-promise';
+import { glob } from 'glob';
 import { FILE_CONSTANTS } from '../middleware/upload.middleware';
 
 export interface FindAllParams {
