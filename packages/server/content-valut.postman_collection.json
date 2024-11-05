@@ -212,6 +212,110 @@
           }
         }
       ]
+    },
+    {
+      "name": "Feeds",
+      "item": [
+        {
+          "name": "Add New Feed",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feedUrl\": \"https://example.com/feed.xml\",\n  \"fetchInterval\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds"]
+            },
+            "description": "Add a new RSS/Atom feed source"
+          }
+        },
+        {
+          "name": "Get All Feeds",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds"]
+            },
+            "description": "Get list of all feed sources"
+          }
+        },
+        {
+          "name": "Delete Feed",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds", "1"]
+            },
+            "description": "Delete a feed source by ID"
+          }
+        },
+        {
+          "name": "Refresh Feed",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds/1/refresh",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds", "1", "refresh"]
+            },
+            "description": "Manually refresh a specific feed"
+          }
+        },
+        {
+          "name": "Refresh All Feeds",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds/refresh/all",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds", "refresh", "all"]
+            },
+            "description": "Refresh all active feeds"
+          }
+        },
+        {
+          "name": "Get Feed Entries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/feeds/1/entries",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "feeds", "1", "entries"]
+            },
+            "description": "Get all entries from a specific feed"
+          }
+        }
+      ]
     }
   ]
 }
