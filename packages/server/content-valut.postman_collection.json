@@ -1,158 +1,217 @@
 {
-	"info": {
-		"_postman_id": "c31e2ce7-2a16-4ba1-b881-1549ddcecb87",
-		"name": "content-valut",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4961505"
-	},
-	"item": [
-		{
-			"name": "New Request",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:3000/api/items?page=1&limit=10",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"items"
-					],
-					"query": [
-						{
-							"key": "page",
-							"value": "1"
-						},
-						{
-							"key": "limit",
-							"value": "10"
-						},
-						{
-							"key": "search",
-							"value": "test",
-							"disabled": true
-						},
-						{
-							"key": "type",
-							"value": "article",
-							"disabled": true
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "http://localhost:3000/api/items/0",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:3000/api/items/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"items",
-						"1"
-					],
-					"query": [
-						{
-							"key": "",
-							"value": null,
-							"disabled": true
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"title\": \"測試項目\",\r\n  \"author\": \"作者名稱\",  \r\n  \"description\": \"描述內容\",\r\n  \"url\": \"https://example.com\",\r\n  \"type\": \"article\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:3000/api/items",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"items"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "PATCH",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"title\": \"更新的標題\",\r\n  \"author\": \"新作者\",\r\n  \"description\": \"新描述\",\r\n  \"url\": \"https://new-url.com\",\r\n  \"type\": \"video\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:3000/api/items/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"items",
-						"1"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:3000/api/items/1",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"items",
-						"1"
-					]
-				}
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "c31e2ce7-2a16-4ba1-b881-1549ddcecb87",
+    "name": "Content Vault API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "4961505"
+  },
+  "item": [
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Get Items List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items?page=1&limit=10&search=test&type=article",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "search",
+                  "value": "test",
+                  "description": "Search term",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "article",
+                  "description": "Item type filter",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get paginated list of items"
+          }
+        },
+        {
+          "name": "Get Item by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "1"]
+            },
+            "description": "Get a single item by ID"
+          }
+        },
+        {
+          "name": "Create Item",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"測試項目\",\n  \"author\": \"作者名稱\",  \n  \"description\": \"描述內容\",\n  \"url\": \"https://example.com\",\n  \"type\": \"article\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/items",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items"]
+            },
+            "description": "Create a new item"
+          }
+        },
+        {
+          "name": "Update Item",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"更新的標題\",\n  \"author\": \"新作者\",\n  \"description\": \"新描述\",\n  \"url\": \"https://new-url.com\",\n  \"type\": \"video\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/items/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "1"]
+            },
+            "description": "Update an existing item"
+          }
+        },
+        {
+          "name": "Delete Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "1"]
+            },
+            "description": "Delete an item by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/items/upload",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "upload"]
+            },
+            "description": "Upload a single file (PDF only)"
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/items/upload/batch",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "upload", "batch"]
+            },
+            "description": "Upload multiple files (PDF only, max 10 files)"
+          }
+        },
+        {
+          "name": "Get Resource File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/1/resource",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "1", "resource"]
+            },
+            "description": "Get the file resource for an item"
+          }
+        },
+        {
+          "name": "Scan Directory",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/items/scan",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "items", "scan"]
+            },
+            "description": "Scan the data directory and update database"
+          }
+        }
+      ]
+    }
+  ]
 }

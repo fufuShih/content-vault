@@ -1,90 +1,177 @@
-import { Router } from 'express';
+// packages/server/src/routes/item.route.ts
+import { Router, Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { itemsService } from '../services/item.service';
+import { upload, handleUploadError, FILE_CONSTANTS } from '../middleware/upload.middleware';
+import multer from 'multer';
 
 const router = Router();
 
-router.get('/', (req, res, next) => {
-  (async () => {
-    try {
-      const page = parseInt(req.query.page as string || '1');
-      const limit = Math.min(parseInt(req.query.limit as string || '10'), 100);
-      const search = req.query.search as string;
-      const type = req.query.type as string;
+// 修正 asyncHandler 類型定義
+const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+) => (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-      const result = await itemsService.findAll({
-        page,
-        limit,
-        search,
-        type,
-      });
+// 基本 CRUD 路由
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string || '1');
+  const limit = Math.min(parseInt(req.query.limit as string || '10'), 100);
+  const search = req.query.search as string;
+  const type = req.query.type as string;
 
-      res.json(result);
-    } catch (error) {
-      next(error);
+  const result = await itemsService.findAll({
+    page,
+    limit,
+    search,
+    type,
+  });
+
+  return res.json(result);
+}));
+
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const item = await itemsService.findById(id);
+
+  if (!item) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
+
+  return res.json(item);
+}));
+
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
+  const newItem = await itemsService.create(req.body);
+  return res.status(201).json(newItem);
+}));
+
+router.patch('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const updatedItem = await itemsService.update(id, req.body);
+
+  if (!updatedItem) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
+
+  return res.json(updatedItem);
+}));
+
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const isDeleted = await itemsService.delete(id);
+
+  if (!isDeleted) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
+
+  return res.status(204).send();
+}));
+
+// 資源相關路由
+router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const resource = await itemsService.getResource(id);
+
+  if (!resource) {
+    return res.status(404).json({ message: 'Resource not found' });
+  }
+
+  res.setHeader('Content-Type', resource.mimeType);
+  return res.sendFile(resource.filePath);
+}));
+
+// 文件操作路由
+router.post('/scan', asyncHandler(async (req: Request, res: Response) => {
+  const scanStats = await itemsService.scanDirectory();
+  return res.json(scanStats);
+}));
+
+// 文件上傳處理
+const handleFileUpload = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file && !req.files) {
+      return res.status(400).json({ message: 'No files uploaded' });
     }
-  })();
-});
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
-router.get('/:id', (req, res, next) => {
-  (async () => {
+// 單文件上傳
+router.post('/upload', (req: Request, res: Response, next: NextFunction) => {
+  upload.single('file')(req, res, async (err) => {
     try {
-      const id = parseInt(req.params.id);
-      const item = await itemsService.findById(id);
-
-      if (!item) {
-        return res.status(404).json({ message: 'Item not found' });
+      if (err) {
+        const { status, message } = handleUploadError(err);
+        return res.status(status).json({ message });
       }
 
-      res.json(item);
-    } catch (error) {
-      next(error);
-    }
-  })();
-});
-
-router.post('/', (req, res, next) => {
-  (async () => {
-    try {
-      const newItem = await itemsService.create(req.body);
-      res.status(201).json(newItem);
-    } catch (error) {
-      next(error);
-    }
-  })();
-});
-
-router.patch('/:id', (req, res, next) => {
-  (async () => {
-    try {
-      const id = parseInt(req.params.id);
-      const updatedItem = await itemsService.update(id, req.body);
-
-      if (!updatedItem) {
-        return res.status(404).json({ message: 'Item not found' });
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      res.json(updatedItem);
-    } catch (error) {
-      next(error);
-    }
-  })();
-});
-
-router.delete('/:id', (req, res, next) => {
-  (async () => {
-    try {
-      const id = parseInt(req.params.id);
-      const isDeleted = await itemsService.delete(id);
-
-      if (!isDeleted) {
-        return res.status(404).json({ message: 'Item not found' });
+      const result = await itemsService.uploadFile(req.file);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error });
       }
 
-      res.status(204).send();
+      return res.status(201).json(result.item);
     } catch (error) {
       next(error);
     }
-  })();
+  });
 });
+
+// 批量上傳
+router.post('/upload/batch', (req: Request, res: Response, next: NextFunction) => {
+  upload.array('files', FILE_CONSTANTS.MAX_FILES)(req, res, async (err) => {
+    try {
+      if (err) {
+        const { status, message } = handleUploadError(err);
+        return res.status(status).json({ message });
+      }
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+
+      const results = await itemsService.uploadFiles(req.files);
+      
+      const summary = {
+        total: results.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+      };
+
+      return res.status(summary.failed === 0 ? 201 : 207).json({ results, summary });
+    } catch (error) {
+      next(error);
+    }
+  });
+});
+
+
+const errorHandler: ErrorRequestHandler = (err, req, res, next): void => {
+  console.error('Error:', err);
+
+  if (err instanceof multer.MulterError) {
+    const { status, message } = handleUploadError(err);
+    res.status(status).json({ message });
+    return;
+  }
+
+  if (err.status) {
+    res.status(err.status).json({ message: err.message });
+    return;
+  }
+
+  res.status(500).json({ message: 'Internal server error' });
+};
+
+// 使用錯誤處理中間件
+router.use(errorHandler);
 
 export default router;
