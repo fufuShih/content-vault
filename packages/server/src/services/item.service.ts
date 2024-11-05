@@ -191,13 +191,17 @@ export class ItemsService {
             stats.added++;
           }
         } catch (error) {
-          const errorMessage = `Failed to process ${filePath}: ${error.message}`;
+          const errorMessage = error instanceof Error 
+            ? `Failed to process ${filePath}: ${error.message}`
+            : `Failed to process ${filePath}: Unknown error`;
           console.error(errorMessage);
           stats.errors.push(errorMessage);
         }
       }));
     } catch (error) {
-      const errorMessage = `General scan error: ${error.message}`;
+      const errorMessage = error instanceof Error 
+            ? `General scan error: ${error.message}`
+            : `General scan error: Unknown error`;
       console.error(errorMessage);
       stats.errors.push(errorMessage);
     }
@@ -233,7 +237,7 @@ export class ItemsService {
 
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : "Unknown Error"
       };
     }
   }
