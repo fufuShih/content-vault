@@ -31,13 +31,44 @@ export class ItemsService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${this.baseUrl}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      // 添加超時和重試邏輯
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 30000);
+      });
 
-    if (!response.ok) throw new Error('Failed to upload file');
-    return response.json();
+      const fetchPromise = fetch(`${this.baseUrl}/upload`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        mode: 'cors',
+        // 添加重要的請求頭
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(errorText || `Upload failed: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Upload error:', error);
+      // 提供更具體的錯誤訊息
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw new Error('Cannot connect to server. Please check your network connection.');
+      }
+      throw error;
+    }
   }
 
   async uploadFiles(files: File[]): Promise<{ results: UploadResult[]; summary: any }> {
@@ -55,7 +86,7 @@ export class ItemsService {
     return response.json();
   }
 
-  async getResourceUrl(id: number): Promise<string> {
+  getResourceUrl(id: number): string {
     return `${this.baseUrl}/${id}/resource`;
   }
 

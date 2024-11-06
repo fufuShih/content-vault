@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from 'dotenv';
 import { router } from './routes';
 import { errorHandler } from './middleware/error-handler';
+import path from 'path';
 
 config();
 
@@ -12,7 +13,7 @@ const port = process.env.PORT || 3000;
 
 // CORS 設置
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite 默認端口
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Vite 默認端口
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Range']
@@ -21,23 +22,11 @@ app.use(cors({
 // Helmet 設置
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "http://localhost:3000"],
-      imgSrc: ["'self'", "blob:", "data:"],
-      workerSrc: ["'self'", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'", "data:"],
-    }
-  }
+  crossOriginEmbedderPolicy: false,
 }));
 
-// Middleware
-app.use(cors());
-app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api', router);
