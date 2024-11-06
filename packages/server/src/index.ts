@@ -4,7 +4,8 @@ import helmet from 'helmet';
 import { config } from 'dotenv';
 import { router } from './routes';
 import { errorHandler } from './middleware/error-handler';
-import path from 'path';
+import fs from "fs";
+import { FILE_CONSTANTS } from './middleware/upload.middleware';
 
 config();
 
@@ -34,6 +35,26 @@ app.use('/api', router);
 // Error handling
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+const startServer = async () => {
+  try {
+    // 創建上傳目錄
+    if (!fs.existsSync(FILE_CONSTANTS.UPLOAD_DIR)) {
+      console.log('Creating upload directory:', FILE_CONSTANTS.UPLOAD_DIR);
+      await fs.promises.mkdir(FILE_CONSTANTS.UPLOAD_DIR, { recursive: true });
+    }
+
+    // 檢查目錄權限
+    await fs.promises.access(FILE_CONSTANTS.UPLOAD_DIR, fs.constants.W_OK);
+
+    // 啟動服務器
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+      console.log(`Upload directory: ${FILE_CONSTANTS.UPLOAD_DIR}`);
+    });
+  } catch (error) {
+    console.error('Server startup error:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

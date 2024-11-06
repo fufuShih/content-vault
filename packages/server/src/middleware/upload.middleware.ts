@@ -1,16 +1,34 @@
-// packages/server/src/middleware/upload.middleware.ts
 import multer from 'multer';
 import path from 'path';
 import { Request } from 'express';
 import crypto from 'crypto';
+import fs from 'fs/promises';
 
 // Constants
 export const FILE_CONSTANTS = {
   MAX_FILE_SIZE: 10 * 1024 * 1024,
   MAX_FILES: 10,
   ALLOWED_TYPES: ['application/pdf'] as const,
-  UPLOAD_DIR: path.join(process.cwd(), 'data')
+  // 修改上傳目錄路徑，使用項目根目錄
+  UPLOAD_DIR: path.join(process.cwd(), 'uploads')
 } as const;
+
+// 確保上傳目錄存在
+const ensureUploadDir = async () => {
+  try {
+    await fs.access(FILE_CONSTANTS.UPLOAD_DIR);
+    console.log('Upload directory exists:', FILE_CONSTANTS.UPLOAD_DIR);
+  } catch (error) {
+    console.log('Creating upload directory:', FILE_CONSTANTS.UPLOAD_DIR);
+    await fs.mkdir(FILE_CONSTANTS.UPLOAD_DIR, { recursive: true });
+  }
+};
+
+// 初始化上傳目錄
+ensureUploadDir().catch(err => {
+  console.error('Failed to create upload directory:', err);
+  process.exit(1); // 如果無法創建目錄則終止程序
+});
 
 // 生成唯一文件名
 const generateUniqueId = () => 
@@ -18,12 +36,19 @@ const generateUniqueId = () =>
 
 // 配置 multer storage
 const storage = multer.diskStorage({
-  destination: (
+  destination: async (
     req: Request,
     file: Express.Multer.File,
     cb: (error: Error | null, destination: string) => void
   ) => {
-    cb(null, FILE_CONSTANTS.UPLOAD_DIR);
+    // 確保目錄存在
+    try {
+      await ensureUploadDir();
+      cb(null, FILE_CONSTANTS.UPLOAD_DIR);
+    } catch (error) {
+      console.error('Error ensuring upload directory:', error);
+      cb(error as Error, FILE_CONSTANTS.UPLOAD_DIR);
+    }
   },
   filename: (
     req: Request,
@@ -33,6 +58,7 @@ const storage = multer.diskStorage({
     const uniqueSuffix = `${Date.now()}-${generateUniqueId()}`;
     const ext = path.extname(file.originalname);
     const filename = `${uniqueSuffix}${ext}`;
+    console.log('Generated filename:', filename);
     cb(null, filename);
   }
 });
@@ -43,6 +69,12 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
+  console.log('Received file:', {
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size
+  });
+
   if (FILE_CONSTANTS.ALLOWED_TYPES.includes(file.mimetype as typeof FILE_CONSTANTS.ALLOWED_TYPES[number])) {
     cb(null, true);
   } else {
@@ -67,6 +99,8 @@ export interface FileUploadError extends Error {
 
 // 上傳錯誤處理
 export const handleUploadError = (err: FileUploadError) => {
+  console.error('File upload error:', err);
+
   switch (err.code) {
     case 'LIMIT_FILE_SIZE':
       return {
@@ -77,6 +111,16 @@ export const handleUploadError = (err: FileUploadError) => {
       return {
         status: 400,
         message: `Too many files. Maximum is ${FILE_CONSTANTS.MAX_FILES} files per upload`
+      };
+    case 'LIMIT_UNEXPECTED_FILE':
+      return {
+        status: 400,
+        message: 'Unexpected field in form data'
+      };
+    case 'ENOENT':
+      return {
+        status: 500,
+        message: 'Server storage error. Please try again later.'
       };
     default:
       return {
