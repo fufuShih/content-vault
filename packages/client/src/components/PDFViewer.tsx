@@ -1,46 +1,195 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL, buildUrl } from '../services/api.config';
+import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocumentProxy } from 'pdfjs-dist';
+
+// 設置 PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // PDF URL 生成函數
 const generatePdfUrl = (id: number) => {
   const baseUrl = API_BASE_URL.startsWith('http') 
     ? API_BASE_URL 
     : `${window.location.origin}${API_BASE_URL}`;
-  return `${baseUrl}/items/${id}/resource#view=FitH`;
+  return `${baseUrl}/items/${id}/resource`;
 };
 
-// PDF 預覽組件
-const PDFPreview = ({ fileId }: { fileId: number }) => {
-  const [iframeError, setIframeError] = useState(false);
+interface PDFViewerProps {
+  fileId: number;
+}
 
-  return iframeError ? (
-    <div className="flex items-center justify-center h-full">
-      <a 
-        href={generatePdfUrl(fileId)} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-      >
-        Open PDF in new tab
-      </a>
+const PDFViewer: React.FC<PDFViewerProps> = ({ fileId }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [numPages, setNumPages] = useState(0);
+  const [scale, setScale] = useState(1.0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+
+  // 載入 PDF 文檔
+  useEffect(() => {
+    const loadPdf = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const pdf = await pdfjsLib.getDocument(generatePdfUrl(fileId)).promise;
+        setPdfDoc(pdf);
+        setNumPages(pdf.numPages);
+        setCurrentPage(1);
+      } catch (err) {
+        console.error('Error loading PDF:', err);
+        setError('Failed to load PDF');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPdf();
+  }, [fileId]);
+
+  // 渲染當前頁面
+  useEffect(() => {
+    const renderPage = async () => {
+      if (!pdfDoc || !canvasRef.current) return;
+
+      try {
+        const page = await pdfDoc.getPage(currentPage);
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          throw new Error('Cannot get canvas context');
+        }
+
+        const viewport = page.getViewport({ scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+      } catch (err) {
+        console.error('Error rendering page:', err);
+        setError('Failed to render page');
+      }
+    };
+
+    renderPage();
+  }, [pdfDoc, currentPage, scale]);
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, numPages));
+  };
+
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.1, 2.0));
+  };
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.1, 0.5));
+  };
+
+  const handleResetZoom = () => {
+    setScale(1.0);
+  };
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-50 p-4">
+        <div className="text-center space-y-4">
+          <p className="text-gray-600">{error}</p>
+          <a 
+            href={generatePdfUrl(fileId)} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 inline-block"
+          >
+            Download PDF
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* 工具列 */}
+      <div className="flex items-center justify-between p-4 bg-gray-100 border-b">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage <= 1 || isLoading}
+            className="px-3 py-1 bg-white border rounded-md disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm">
+            Page {currentPage} of {numPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage >= numPages || isLoading}
+            className="px-3 py-1 bg-white border rounded-md disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleZoomOut}
+            disabled={isLoading}
+            className="px-3 py-1 bg-white border rounded-md disabled:opacity-50"
+          >
+            -
+          </button>
+          <button
+            onClick={handleResetZoom}
+            disabled={isLoading}
+            className="px-3 py-1 bg-white border rounded-md disabled:opacity-50"
+          >
+            {(scale * 100).toFixed(0)}%
+          </button>
+          <button
+            onClick={handleZoomIn}
+            disabled={isLoading}
+            className="px-3 py-1 bg-white border rounded-md disabled:opacity-50"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* PDF 顯示區域 */}
+      <div className="flex-1 overflow-auto p-4 bg-gray-50">
+        <div className="relative flex justify-center min-h-full">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-75">
+              <div className="animate-spin text-2xl text-blue-500">↻</div>
+            </div>
+          )}
+          <canvas
+            ref={canvasRef}
+            className="shadow-lg"
+          />
+        </div>
+      </div>
     </div>
-  ) : (
-    <iframe
-      src={generatePdfUrl(fileId)}
-      className="w-full h-full rounded-lg"
-      title="PDF Preview"
-      onError={() => setIframeError(true)}
-      sandbox="allow-same-origin allow-scripts allow-popups"
-    />
   );
 };
 
-const PDFViewer = () => {
+// 上傳组件
+const PDFUploader = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadedFileId, setUploadedFileId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState(1.0);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -64,7 +213,6 @@ const PDFViewer = () => {
       formData.append('file', file);
 
       const uploadUrl = buildUrl('items/upload');
-      console.log('Uploading to:', uploadUrl);
       
       const response = await fetch(uploadUrl, {
         method: 'POST',
@@ -72,14 +220,10 @@ const PDFViewer = () => {
         headers: {
           'Accept': 'application/json',
         },
-        // 不需要 credentials: 'include' 和 mode: 'cors'，因為我們在同一域下
       });
-
-      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Upload error response:', errorText);
         throw new Error(
           `Upload failed: ${response.status} ${response.statusText}${
             errorText ? ` - ${errorText}` : ''
@@ -88,7 +232,6 @@ const PDFViewer = () => {
       }
 
       const result = await response.json();
-      console.log('Upload successful:', result);
       
       if (!result.id) {
         throw new Error('Invalid response: missing file ID');
@@ -195,24 +338,7 @@ const PDFViewer = () => {
           )}
         </div>
 
-        <div className="px-6 pb-6 flex justify-between">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setScale(prev => Math.max(0.5, prev - 0.1))}
-              disabled={!uploadedFileId}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Zoom Out
-            </button>
-            <button
-              onClick={() => setScale(prev => Math.min(2.0, prev + 0.1))}
-              disabled={!uploadedFileId}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Zoom In
-            </button>
-          </div>
-          
+        <div className="px-6 pb-6 flex justify-end">
           <button
             onClick={handleUpload}
             disabled={!file || isUploading}
@@ -243,10 +369,8 @@ const PDFViewer = () => {
               </a>
             </div>
           </div>
-          <div className="px-6 pb-6">
-            <div className="h-[600px] bg-gray-100 rounded-lg">
-              <PDFPreview fileId={uploadedFileId} />
-            </div>
+          <div className="h-[800px]">
+            <PDFViewer fileId={uploadedFileId} />
           </div>
         </div>
       )}
@@ -254,4 +378,4 @@ const PDFViewer = () => {
   );
 };
 
-export default PDFViewer;
+export default PDFUploader;
