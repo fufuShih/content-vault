@@ -1,6 +1,40 @@
 import React, { useState } from 'react';
 import { API_BASE_URL, buildUrl } from '../services/api.config';
 
+// PDF URL 生成函數
+const generatePdfUrl = (id: number) => {
+  const baseUrl = API_BASE_URL.startsWith('http') 
+    ? API_BASE_URL 
+    : `${window.location.origin}${API_BASE_URL}`;
+  return `${baseUrl}/items/${id}/resource#view=FitH`;
+};
+
+// PDF 預覽組件
+const PDFPreview = ({ fileId }: { fileId: number }) => {
+  const [iframeError, setIframeError] = useState(false);
+
+  return iframeError ? (
+    <div className="flex items-center justify-center h-full">
+      <a 
+        href={generatePdfUrl(fileId)} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+      >
+        Open PDF in new tab
+      </a>
+    </div>
+  ) : (
+    <iframe
+      src={generatePdfUrl(fileId)}
+      className="w-full h-full rounded-lg"
+      title="PDF Preview"
+      onError={() => setIframeError(true)}
+      sandbox="allow-same-origin allow-scripts allow-popups"
+    />
+  );
+};
+
 const PDFViewer = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadedFileId, setUploadedFileId] = useState<number | null>(null);
@@ -38,9 +72,7 @@ const PDFViewer = () => {
         headers: {
           'Accept': 'application/json',
         },
-        // 關鍵修改：添加這些選項
-        credentials: 'include',
-        mode: 'cors',
+        // 不需要 credentials: 'include' 和 mode: 'cors'，因為我們在同一域下
       });
 
       console.log('Response status:', response.status);
@@ -68,19 +100,19 @@ const PDFViewer = () => {
       console.error('Upload error:', err);
       setError(
         err instanceof Error 
-          ? `Upload failed: ${err.message}. Please check your network connection.`
-          : 'Upload failed. Please check your network connection.'
+          ? `Upload failed: ${err.message}`
+          : 'Upload failed. Please try again.'
       );
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile && droppedFile.type === 'application/pdf') {
@@ -110,8 +142,8 @@ const PDFViewer = () => {
           >
             {!file ? (
               <div className="space-y-4">
-                <div className="flex justify-center">
-                  Upload
+                <div className="flex justify-center text-4xl text-gray-400">
+                  ↑
                 </div>
                 <div className="text-gray-600">
                   <p className="text-lg font-medium">Drop your PDF file here</p>
@@ -122,7 +154,7 @@ const PDFViewer = () => {
                     </span>
                     <input
                       type="file"
-                      accept=".pdf"
+                      accept=".pdf,application/pdf"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -132,7 +164,7 @@ const PDFViewer = () => {
             ) : (
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-4">
-                  File
+                  <span className="text-blue-500">📄</span>
                   <div>
                     <p className="font-medium">{file.name}</p>
                     <p className="text-sm text-gray-500">
@@ -143,8 +175,9 @@ const PDFViewer = () => {
                 <button
                   onClick={() => setFile(null)}
                   className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                  aria-label="Remove file"
                 >
-                  X
+                  ✕
                 </button>
               </div>
             )}
@@ -186,7 +219,7 @@ const PDFViewer = () => {
             className="min-w-[100px] px-4 py-2 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
-              'Loading'
+              <span className="inline-block animate-spin">↻</span>
             ) : (
               'Upload'
             )}
@@ -198,15 +231,21 @@ const PDFViewer = () => {
       {uploadedFileId && (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900">PDF Preview</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">PDF Preview</h2>
+              <a
+                href={generatePdfUrl(uploadedFileId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:text-blue-700"
+              >
+                Open in new tab
+              </a>
+            </div>
           </div>
           <div className="px-6 pb-6">
             <div className="h-[600px] bg-gray-100 rounded-lg">
-              <iframe
-                src={`${API_BASE_URL}/items/${uploadedFileId}/resource#view=FitH`}
-                className="w-full h-full rounded-lg"
-                title="PDF Preview"
-              />
+              <PDFPreview fileId={uploadedFileId} />
             </div>
           </div>
         </div>
