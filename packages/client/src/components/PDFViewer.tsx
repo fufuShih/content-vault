@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../services/api.config';
+import { API_BASE_URL, buildUrl } from '../services/api.config';
 
 const PDFViewer = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -29,17 +29,25 @@ const PDFViewer = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      // 使用代理的 URL
-      console.log('Uploading to:', `${API_BASE_URL}/items/upload`);
+      const uploadUrl = buildUrl('items/upload');
+      console.log('Uploading to:', uploadUrl);
       
-      const response = await fetch(`${API_BASE_URL}/items/upload`, {
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
-        // 不需要設置 credentials 和 mode，因為使用代理
+        headers: {
+          'Accept': 'application/json',
+        },
+        // 關鍵修改：添加這些選項
+        credentials: 'include',
+        mode: 'cors',
       });
+
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Upload error response:', errorText);
         throw new Error(
           `Upload failed: ${response.status} ${response.statusText}${
             errorText ? ` - ${errorText}` : ''
@@ -49,11 +57,20 @@ const PDFViewer = () => {
 
       const result = await response.json();
       console.log('Upload successful:', result);
+      
+      if (!result.id) {
+        throw new Error('Invalid response: missing file ID');
+      }
+
       setUploadedFileId(result.id);
       setFile(null);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(
+        err instanceof Error 
+          ? `Upload failed: ${err.message}. Please check your network connection.`
+          : 'Upload failed. Please check your network connection.'
+      );
     } finally {
       setIsUploading(false);
     }
