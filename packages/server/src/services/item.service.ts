@@ -2,6 +2,7 @@ import { db } from '../db';
 import { items, type Item, type ItemInsert } from '../db/schema';
 import { eq, like, desc, sql, and } from 'drizzle-orm';
 import fs from 'fs/promises';
+import { Stats } from 'fs';
 import path from 'path';
 import { glob } from 'glob';
 import { FILE_CONSTANTS } from '../middleware/upload.middleware';
@@ -28,6 +29,13 @@ export interface UploadResult {
   item?: Item;
   error?: string;
 }
+
+export interface ResourceInfo {
+  filePath: string;
+  mimeType: string;
+  stats: Stats;
+}
+
 
 export class ItemsService {
   private readonly dataDirectory = FILE_CONSTANTS.UPLOAD_DIR;
@@ -127,7 +135,7 @@ export class ItemsService {
     return !!deletedItem;
   }
 
-  async getResource(id: number): Promise<{ filePath: string; mimeType: string } | null> {
+  async getResource(id: number): Promise<ResourceInfo | null> {
     const item = await this.findById(id);
     
     if (!item?.url) return null;
@@ -135,22 +143,40 @@ export class ItemsService {
     const filePath = path.join(this.dataDirectory, item.url);
 
     try {
-      await fs.access(filePath);
+      const stats = await fs.stat(filePath);
+      const mimeType = this.getMimeType(path.extname(filePath).toLowerCase());
       
-      const mimeType = this.getMimeType(item.type);
-      return { filePath, mimeType };
+      return { filePath, mimeType, stats };
     } catch (error) {
       console.error(`File not found: ${filePath}`, error);
       return null;
     }
   }
 
-  private getMimeType(type: string): string {
+  private getMimeType(extension: string): string {
     const mimeTypes: Record<string, string> = {
-      pdf: 'application/pdf',
-      // 可以添加其他文件類型的 mime type
+      '.pdf': 'application/pdf',
+      '.epub': 'application/epub+zip',
+      '.mobi': 'application/x-mobipocket-ebook',
+      '.txt': 'text/plain',
+      '.md': 'text/markdown',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     };
-    return mimeTypes[type] || 'application/octet-stream';
+    return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
+  }
+
+  private getFileType(extension: string): string {
+    const typeMap: Record<string, string> = {
+      '.pdf': 'pdf',
+      '.epub': 'epub',
+      '.mobi': 'mobi',
+      '.txt': 'text',
+      '.md': 'markdown',
+      '.doc': 'doc',
+      '.docx': 'docx'
+    };
+    return typeMap[extension.toLowerCase()] || 'unknown';
   }
 
   async scanDirectory(): Promise<{ added: number; updated: number; errors: string[] }> {
@@ -207,14 +233,6 @@ export class ItemsService {
     }
 
     return stats;
-  }
-
-  private getFileType(extension: string): string {
-    const typeMap: Record<string, string> = {
-      '.pdf': 'pdf'
-      // 可以添加其他文件類型
-    };
-    return typeMap[extension] || 'unknown';
   }
 
   async uploadFile(file: Express.Multer.File): Promise<UploadResult> {

@@ -2,6 +2,7 @@
 import { Router, Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { itemsService } from '../services/item.service';
 import { upload, handleUploadError, FILE_CONSTANTS } from '../middleware/upload.middleware';
+import { createReadStream } from 'fs';
 import multer from 'multer';
 
 const router = Router();
@@ -68,7 +69,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   return res.status(204).send();
 }));
 
-// 資源相關路由
+// 改善資源讀取路由以支援 Range Request
 router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const resource = await itemsService.getResource(id);
@@ -77,8 +78,39 @@ router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => 
     return res.status(404).json({ message: 'Resource not found' });
   }
 
-  res.setHeader('Content-Type', resource.mimeType);
-  return res.sendFile(resource.filePath);
+  const { filePath, mimeType, stats } = resource;
+
+  // 設置必要的響應頭
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Content-Disposition', 'inline');
+
+  // 處理 Range Request
+  const range = req.headers.range;
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+    const chunkSize = (end - start) + 1;
+
+    if (start >= stats.size || end >= stats.size) {
+      res.status(416).send('Requested range not satisfiable');
+      return;
+    }
+
+    res.status(206);
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`);
+    res.setHeader('Content-Length', chunkSize);
+
+    const fileStream = createReadStream(filePath, { start, end });
+    fileStream.pipe(res);
+  } else {
+    // 如果不是 Range Request，發送整個文件
+    res.setHeader('Content-Length', stats.size);
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(res);
+  }
 }));
 
 // 文件操作路由

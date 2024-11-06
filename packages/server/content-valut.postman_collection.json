@@ -153,7 +153,7 @@
               "port": "3000",
               "path": ["api", "items", "upload"]
             },
-            "description": "Upload a single file (PDF only)"
+            "description": "Upload a single file (Supports PDF, EPUB, MOBI, TXT, MD, DOC, DOCX)"
           }
         },
         {
@@ -178,14 +178,21 @@
               "port": "3000",
               "path": ["api", "items", "upload", "batch"]
             },
-            "description": "Upload multiple files (PDF only, max 10 files)"
+            "description": "Upload multiple files (Supports PDF, EPUB, MOBI, TXT, MD, DOC, DOCX, max 10 files)"
           }
         },
         {
           "name": "Get Resource File",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575",
+                "description": "Optional: Request specific byte range",
+                "disabled": true
+              }
+            ],
             "url": {
               "raw": "http://localhost:3000/api/items/1/resource",
               "protocol": "http",
@@ -193,7 +200,7 @@
               "port": "3000",
               "path": ["api", "items", "1", "resource"]
             },
-            "description": "Get the file resource for an item"
+            "description": "Get the file resource for an item. Supports Range requests for streaming large files."
           }
         },
         {
