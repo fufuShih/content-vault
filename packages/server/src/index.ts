@@ -6,13 +6,14 @@ import { router } from './routes';
 import { errorHandler } from './middleware/error-handler';
 import fs from "fs";
 import { FILE_CONSTANTS } from './middleware/upload.middleware';
+import path from 'path';
 
 config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS 設置
+// CORS
 app.use(cors({
   origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], // Vite 默認端口
   credentials: true,
@@ -20,10 +21,35 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Range']
 }));
 
-// Helmet 設置
+// Helmet
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "http://localhost:5173"],
+      frameSrc: ["'self'", "http://localhost:5173"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      objectSrc: ["'self'"],
+      mediaSrc: ["'self'"],
+    },
+  },
+}));
+
+// Static
+const uploadsPath = path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders: (res, path) => {
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'public, max-age=3600',
+      'Accept-Ranges': 'bytes',
+    });
+  }
 }));
 
 app.use(express.json());
@@ -37,16 +63,15 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    // 創建上傳目錄
+    // create upload dir
     if (!fs.existsSync(FILE_CONSTANTS.UPLOAD_DIR)) {
       console.log('Creating upload directory:', FILE_CONSTANTS.UPLOAD_DIR);
       await fs.promises.mkdir(FILE_CONSTANTS.UPLOAD_DIR, { recursive: true });
     }
 
-    // 檢查目錄權限
+    // check the permission
     await fs.promises.access(FILE_CONSTANTS.UPLOAD_DIR, fs.constants.W_OK);
 
-    // 啟動服務器
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Upload directory: ${FILE_CONSTANTS.UPLOAD_DIR}`);
