@@ -1,11 +1,15 @@
-import PDFViewer from './components/PDFViewer';
+import { Routes, Route } from 'react-router-dom';
+import { Toaster } from "@/components/ui/toaster";
+import HomePage from './pages/home.page';
 
 function App() {
-
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <PDFViewer />
-    </div>
+    <>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 
