@@ -106,8 +106,9 @@ const Uploader: React.FC<UploaderProps> = ({ onUploadSuccess }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="outline" size="icon" className='w-full'>
           <Plus className="h-4 w-4" />
+          Uploader
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

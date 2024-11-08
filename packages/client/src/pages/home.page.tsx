@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from '@/hooks/use-toast'
 import Sidebar from '@/components/Sidebar'
 import CollectItem, { Item } from '@/components/CollectItem'
-import Uploader from '@/components/Uploader'
 
 interface PaginationInfo {
   total: number
@@ -61,7 +60,7 @@ const HomePage = () => {
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
-      <Sidebar />
+      <Sidebar onUploadSuccess={fetchItems} />
       
       <main className="flex-1 overflow-auto">
         <div className="p-6">
@@ -74,16 +73,12 @@ const HomePage = () => {
                 </p>
               )}
             </div>
-            
-            <div className="flex items-center gap-4">
-              <Uploader onUploadSuccess={fetchItems} />
-            </div>
           </header>
 
           {items.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500">
-                No items found. Upload some files to get started.
+                No items found. Add some items to your library to get started.
               </p>
             </div>
           ) : (
@@ -139,4 +134,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage
+export default HomePage;
