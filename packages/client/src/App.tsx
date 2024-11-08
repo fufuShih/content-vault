@@ -1,10 +1,12 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import HomePage from './pages/home.page';
 import CollectionDetailPage from './pages/collection-detail.page';
 import { Input } from './components/ui/input';
 
 function App() {
+  const navigate = useNavigate();
+
   return (
     <>
       <div className="min-h-screen bg-background">
@@ -15,7 +17,7 @@ function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <span className="mx-4 text-xl font-semibold">Brand</span>
+            <span className="mx-4 text-xl font-semibold cursor-pointer" onClick={() => navigate('/')}>Brand</span>
 
             <div className="flex-1">
               <Input 
