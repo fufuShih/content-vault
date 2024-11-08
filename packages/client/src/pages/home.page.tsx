@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import PDFViewer from '@/components/PDFViewer';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 
 interface Item {
@@ -29,6 +30,7 @@ interface ApiResponse {
 }
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<Item[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -42,12 +44,8 @@ const HomePage = () => {
   const fetchItems = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/items');
-      if (!response.ok) {
-        throw new Error('Failed to fetch items');
-      }
+      if (!response.ok) throw new Error('Failed to fetch items');
       const result: ApiResponse = await response.json();
-      
-      // 設置項目和分頁信息
       setItems(result.data);
       setPagination(result.pagination);
     } catch (error) {
@@ -82,8 +80,6 @@ const HomePage = () => {
         title: "Success",
         description: "File uploaded successfully",
       });
-      
-      // 重置 input
       event.target.value = '';
     } catch (error) {
       toast({
@@ -96,11 +92,16 @@ const HomePage = () => {
     }
   };
 
+  const handleReadClick = (itemId: number) => {
+    setSelectedItem(null);
+    navigate(`/collection/${itemId}`);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Content Library</h1>
+          <h1 className="text-3xl font-bold">Collection</h1>
           {pagination && (
             <p className="text-sm text-gray-500 mt-2">
               Showing {items.length} of {pagination.total} items
@@ -130,7 +131,7 @@ const HomePage = () => {
           <p className="text-gray-500">No items found. Upload some files to get started.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {items.map((item) => (
             <Card 
               key={item.id}
@@ -138,17 +139,9 @@ const HomePage = () => {
               onClick={() => setSelectedItem(item)}
             >
               <CardContent className="p-4">
-                <h2 className="text-xl font-semibold mb-2 line-clamp-1">{item.title}</h2>
-                <p className="text-sm text-gray-500 mb-2">By {item.author || 'Unknown'}</p>
-                <p className="text-sm text-gray-600 line-clamp-2">{item.description || 'No description available'}</p>
-                <div className="mt-4 flex justify-between items-center">
-                  <span className="text-xs text-gray-400">
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </span>
-                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                    {item.type}
-                  </span>
-                </div>
+                <div className="aspect-[3/4] bg-gray-100 mb-2 rounded-md"></div>
+                <h2 className="text-sm font-medium line-clamp-2">{item.title}</h2>
+                <p className="text-xs text-gray-500 mt-1">{item.author || 'Unknown'}</p>
               </CardContent>
             </Card>
           ))}
@@ -159,13 +152,25 @@ const HomePage = () => {
         open={!!selectedItem} 
         onOpenChange={(open) => !open && setSelectedItem(null)}
       >
-        <DialogContent className="max-w-7xl w-[95vw] h-[90vh]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedItem?.title}</DialogTitle>
+            <DialogTitle>Book Detail</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 h-full overflow-hidden">
-            {selectedItem && <PDFViewer itemId={selectedItem.id} />}
+          <div className="grid grid-cols-[1fr_2fr] gap-4 py-4">
+            <div className="aspect-[3/4] bg-gray-100 rounded-md"></div>
+            <div>
+              <h2 className="text-xl font-semibold mb-2">{selectedItem?.title}</h2>
+              <p className="text-sm text-gray-500 mb-4">By {selectedItem?.author || 'Unknown'}</p>
+              <p className="text-sm text-gray-600">{selectedItem?.description || 'No description available'}</p>
+            </div>
           </div>
+          <DialogFooter>
+            {selectedItem && (
+              <Button onClick={() => handleReadClick(selectedItem.id)}>
+                Read
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
