@@ -53,10 +53,11 @@ const HomePage = () => {
     setSelectedItem(item)
   }
 
-  const handleReadClick = (itemId: number) => {
-    setSelectedItem(null)
-    navigate(`/collection/${itemId}`)
-  }
+  const handleReadClick = (item: Item) => {
+    setSelectedItem(null);
+    const type = item.type.toLowerCase();
+    navigate(`/collection/${item.id}?type=${type}`);
+  };
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
@@ -105,14 +106,20 @@ const HomePage = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Book Detail</DialogTitle>
+            <DialogTitle>
+              {selectedItem?.type === 'rss' ? 'Feed Details' : 'Book Details'}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-[1fr_2fr] gap-4 py-4">
             <div className="aspect-[3/4] bg-gray-100 rounded-md" />
             <div>
               <h2 className="text-xl font-semibold mb-2">{selectedItem?.title}</h2>
               <p className="text-sm text-gray-500 mb-4">
-                By {selectedItem?.author || 'Unknown'}
+                {selectedItem?.type === 'rss' ? (
+                  <span>RSS Feed</span>
+                ) : (
+                  <span>By {selectedItem?.author || 'Unknown'}</span>
+                )}
               </p>
               <p className="text-sm text-gray-600">
                 {selectedItem?.description || 'No description available'}
@@ -121,15 +128,15 @@ const HomePage = () => {
           </div>
           <DialogFooter>
             {selectedItem && (
-              <Button onClick={() => handleReadClick(selectedItem.id)}>
-                Read
+              <Button onClick={() => handleReadClick(selectedItem)}>
+                {selectedItem.type === 'rss' ? 'View Feed' : 'Read Book'}
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
 export default HomePage

@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocumentProxy } from 'pdfjs-dist';
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import PDFToc from './PDFToc';
 
-// 設置 worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
   itemId: number;
+  onOutlineLoad?: (hasOutline: boolean) => void;
+  onTocGenerate?: (toc: any[]) => void;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({ itemId }) => {
+const PDFViewer: React.FC<PDFViewerProps> = ({ 
+  itemId, 
+  onOutlineLoad,
+  onTocGenerate 
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +25,52 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ itemId }) => {
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1.5);
 
-  // PDF URL 生成函數
   const getPdfUrl = () => {
     return `http://localhost:3000/api/items/${itemId}/resource`;
   };
 
-  // 載入 PDF
+  const extractOutline = async (pdf: PDFDocumentProxy) => {
+    try {
+      const outline = await pdf.getOutline();
+      if (outline) {
+        const tocItems = await Promise.all(
+          outline.map(async (item: any) => {
+            let dest = await pdf.getDestination(item.dest);
+            let pageIndex = await pdf.getPageIndex(dest[0]);
+            
+            let children = undefined;
+            if (item.items && item.items.length > 0) {
+              children = await Promise.all(
+                item.items.map(async (child: any) => {
+                  let childDest = await pdf.getDestination(child.dest);
+                  let childPageIndex = await pdf.getPageIndex(childDest[0]);
+                  return {
+                    title: child.title,
+                    pageIndex: childPageIndex,
+                  };
+                })
+              );
+            }
+
+            return {
+              title: item.title,
+              pageIndex: pageIndex,
+              children,
+            };
+          })
+        );
+        
+        onTocGenerate?.(tocItems);
+        onOutlineLoad?.(true);
+      } else {
+        onOutlineLoad?.(false);
+      }
+    } catch (error) {
+      console.error('Error extracting outline:', error);
+      onOutlineLoad?.(false);
+    }
+  };
+
   useEffect(() => {
     const loadPdf = async () => {
       try {
@@ -34,6 +79,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ itemId }) => {
         setPdfDoc(pdf);
         setTotalPages(pdf.numPages);
         setCurrentPage(1);
+        await extractOutline(pdf);
       } catch (err) {
         console.error('Error loading PDF:', err);
         setError('Failed to load PDF');
@@ -45,7 +91,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ itemId }) => {
     loadPdf();
   }, [itemId]);
 
-  // 渲染 PDF 頁面
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current) return;
 
@@ -74,64 +119,21 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ itemId }) => {
     renderPage();
   }, [pdfDoc, currentPage, scale]);
 
-  const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 3));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.5));
+  const handlePageChange = (pageIndex: number) => {
+    setCurrentPage(pageIndex + 1);
   };
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return <div className="text-red-500 p-4">{error}</div>;
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handlePrevPage}
-            disabled={currentPage <= 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button 
-            variant="outline" 
-            onClick={handleNextPage}
-            disabled={currentPage >= totalPages}
-          >
-            Next
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleZoomOut}>-</Button>
-          <span className="text-sm">{Math.round(scale * 100)}%</span>
-          <Button variant="outline" onClick={handleZoomIn}>+</Button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto p-4">
+    <div className="h-full flex justify-center">
+      <div className="relative max-h-full overflow-auto">
         {isLoading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <Skeleton className="w-[600px] h-[800px]" />
-          </div>
+          <Skeleton className="w-[600px] h-[800px]" />
         ) : (
-          <div className="flex justify-center">
-            <canvas ref={canvasRef} className="shadow-lg" />
-          </div>
+          <canvas ref={canvasRef} className="shadow-lg" />
         )}
       </div>
     </div>
