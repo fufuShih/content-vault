@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from '@/hooks/use-toast'
 import Sidebar from '@/components/Sidebar'
 import CollectItem, { Item } from '@/components/CollectItem'
-import LoadingSpinner from '@/components/LoadingSpinner'
+import Uploader from '@/components/Uploader'
 
 interface PaginationInfo {
   total: number
@@ -27,13 +26,8 @@ const HomePage = () => {
   const [items, setItems] = useState<Item[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
 
-  useEffect(() => {
-    fetchItems()
-  }, [])
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:3000/api/items')
       if (!response.ok) throw new Error('Failed to fetch items')
@@ -49,40 +43,11 @@ const HomePage = () => {
         variant: "destructive",
       })
     }
-  }
+  }, [toast])
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    setIsUploading(true)
-    try {
-      const response = await fetch('http://localhost:3000/api/items/upload', {
-        method: 'POST',
-        body: formData,
-      })
-      
-      if (!response.ok) throw new Error('Upload failed')
-      
-      await fetchItems()
-      toast({
-        title: "Success",
-        description: "File uploaded successfully",
-      })
-      event.target.value = ''
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to upload file",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploading(false)
-    }
-  }
+  useEffect(() => {
+    fetchItems()
+  }, [fetchItems])
 
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
@@ -110,20 +75,7 @@ const HomePage = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept=".pdf,.epub,.txt"
-                  onChange={handleFileUpload}
-                  className="max-w-xs"
-                  disabled={isUploading}
-                />
-                {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-                    <LoadingSpinner />
-                  </div>
-                )}
-              </div>
+              <Uploader onUploadSuccess={fetchItems} />
             </div>
           </header>
 
