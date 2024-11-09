@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from 'date-fns';
@@ -15,7 +15,7 @@ interface RSSEntry {
 
 interface RSSViewerProps {
   itemId: number;
-  selectedEntry?: RSSEntry | null;  // 新增這個 prop
+  selectedEntry?: RSSEntry | null;
 }
 
 const RSSViewer: React.FC<RSSViewerProps> = ({ itemId, selectedEntry }) => {
