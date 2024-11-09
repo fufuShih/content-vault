@@ -119,18 +119,6 @@ router.post('/scan', asyncHandler(async (req: Request, res: Response) => {
   return res.json(scanStats);
 }));
 
-// 文件上傳處理
-const handleFileUpload = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.file && !req.files) {
-      return res.status(400).json({ message: 'No files uploaded' });
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
 // 單文件上傳
 router.post('/upload', (req: Request, res: Response, next: NextFunction) => {
   upload.single('file')(req, res, async (err) => {
