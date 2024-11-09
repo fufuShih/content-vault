@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PDFViewer from '@/components/PDFViewer';
-import RSSViewer from '@/components/RSSViewer';
+import RSSViewer, { RSSEntry } from '@/components/RSSViewer';
 import PDFToc from '@/components/PDFToc';
 import { Menu } from "lucide-react";
 
@@ -14,13 +14,6 @@ interface Item {
   description: string | null;
   url: string;
   type: string;
-}
-
-interface RSSEntry {
-  id: number;
-  title: string;
-  link: string;
-  pubDate: string;
 }
 
 const CollectionDetailPage = () => {

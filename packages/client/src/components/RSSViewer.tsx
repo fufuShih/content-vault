@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from 'date-fns';
 
-interface RSSEntry {
+export interface RSSEntry {
   id: number;
   title: string;
   author: string | null;
