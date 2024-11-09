@@ -90,6 +90,34 @@ router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => 
   fileStream.pipe(res);
 }));
 
+// EPUB 專用路由
+router.get('/:id/resource/epub', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const resource = await itemsService.getResource(id);
+
+  if (!resource) {
+    return res.status(404).json({ message: 'Resource not found' });
+  }
+
+  const { filePath, mimeType, stats } = resource;
+
+  // 確認是 EPUB 文件
+  if (mimeType !== 'application/epub+zip') {
+    return res.status(400).json({ message: 'Resource is not an EPUB file' });
+  }
+
+  // 設置 EPUB 專用響應頭
+  res.setHeader('Content-Type', 'application/epub+zip');
+  res.setHeader('Content-Length', stats.size);
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+
+  // 流式傳輸 EPUB 文件
+  const fileStream = createReadStream(filePath);
+  fileStream.pipe(res);
+}));
+
 // 文件操作路由
 router.post('/scan', asyncHandler(async (req: Request, res: Response) => {
   const scanStats = await itemsService.scanDirectory();
