@@ -201,46 +201,55 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="h-16 border-b flex items-center px-4 gap-4 bg-background">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        <div className="flex items-center gap-2">
+      <div className="h-16 border-b flex items-center px-4 bg-background">
+        <div className="flex-1 flex items-center">
           <Button
-            variant="outline"
+            id="sidebar-toggle"
+            variant="ghost"
             size="icon"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage <= 1}
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <Menu className="h-5 w-5" />
           </Button>
-          
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              value={inputPage}
-              onChange={handlePageInputChange}
-              className="w-16 text-center"
-            />
-            <span>/ {totalPages}</span>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center gap-4">
+          <div id="page-controls" className="flex items-center gap-2">
+            <Button
+              id="prev-page"
+              variant="outline"
+              size="icon"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              <Input
+                id="page-input"
+                type="text"
+                value={inputPage}
+                onChange={handlePageInputChange}
+                className="w-16 text-center"
+              />
+              <span>/ {totalPages}</span>
+            </div>
+
+            <Button
+              id="next-page"
+              variant="outline"
+              size="icon"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-
-          <div className="flex items-center gap-2 ml-4">
+          <div id="zoom-controls" className="flex items-center gap-2">
             <Button
+              id="zoom-out"
               variant="outline"
               size="icon"
               onClick={handleZoomOut}
@@ -248,8 +257,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span>{Math.round(scale * 100)}%</span>
+            <span id="zoom-level">{Math.round(scale * 100)}%</span>
             <Button
+              id="zoom-in"
               variant="outline"
               size="icon"
               onClick={handleZoomIn}
@@ -259,6 +269,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </Button>
           </div>
         </div>
+
+        <div className="flex-1" />
       </div>
 
       <div className="flex-1 flex overflow-hidden">
