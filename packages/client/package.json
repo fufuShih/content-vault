@@ -21,6 +21,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "epubjs": "^0.3.93",
     "jotai": "^2.10.1",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.454.0",

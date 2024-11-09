@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import PDFViewer from '@/components/PDFViewer';
 import RSSViewer from '@/components/RSSViewer';
+import EPUBViewer from '@/components/EPUBViewer';
 
 interface Item {
   id: number;
@@ -39,6 +40,8 @@ const CollectionDetailPage = () => {
     switch (viewType) {
       case 'pdf':
         return <PDFViewer itemId={item.id} />;
+      case 'epub':
+        return <EPUBViewer itemId={item.id} />;
       case 'rss':
         return <RSSViewer itemId={item.id} />;
       default:
