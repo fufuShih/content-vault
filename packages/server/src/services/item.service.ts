@@ -238,10 +238,12 @@ export class ItemsService {
   async uploadFile(file: Express.Multer.File): Promise<UploadResult> {
     try {
       const relativePath = path.relative(this.dataDirectory, file.path);
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const type = this.getFileType(fileExt);
       
       const newItem = await this.create({
-        title: path.basename(file.originalname, path.extname(file.originalname)),
-        type: 'pdf',
+        title: path.basename(file.originalname, fileExt),
+        type,
         url: relativePath
       });
 
