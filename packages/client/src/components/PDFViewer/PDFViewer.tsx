@@ -1,85 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
-import { Skeleton } from "@/components/ui/skeleton";
+
+interface PDFOutlineNode {
+  title: string;
+  bold: boolean;
+  italic: boolean;
+  color: Uint8ClampedArray;
+  dest: string | unknown[] | null;
+  url: string | null;
+  unsafeUrl: string | undefined;
+  newWindow: boolean | undefined;
+  count: number | undefined;
+  items: PDFOutlineNode[];
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useInView } from 'react-intersection-observer';
 import { debounce } from 'lodash-es';
+import { PDFViewerProps } from './types';
+import { PDFPage } from './PDFPage';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.min.mjs';
-
-interface TocItem {
-  title: string;
-  pageIndex: number;
-  children?: TocItem[];
-}
-
-interface PDFViewerProps {
-  itemId: number;
-  onOutlineLoad?: (hasOutline: boolean) => void;
-  onTocGenerate?: (toc: TocItem[]) => void;
-}
-
-interface PDFPageProps {
-  pdfDoc: PDFDocumentProxy;
-  pageNumber: number;
-  scale: number;
-  onVisible?: () => void;
-}
-
-const PDFPage: React.FC<PDFPageProps> = ({ pdfDoc, pageNumber, scale, onVisible }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { ref, inView } = useInView({
-    threshold: 0.5, // 當頁面50%可見時觸發
-    onChange: (inView) => {
-      if (inView) {
-        onVisible?.();
-      }
-    }
-  });
-
-  useEffect(() => {
-    const renderPage = async () => {
-      if (!canvasRef.current) return;
-      try {
-        setIsLoading(true);
-        const page = await pdfDoc.getPage(pageNumber);
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        if (!context) return;
-
-        const viewport = page.getViewport({ scale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({
-          canvasContext: context,
-          viewport
-        }).promise;
-      } catch (err) {
-        console.error(`Error rendering page ${pageNumber}:`, err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    renderPage();
-  }, [pdfDoc, pageNumber, scale]);
-
-  return (
-    <div ref={ref} className="relative mb-4">
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-          <div className="loading-spinner" />
-        </div>
-      )}
-      <canvas ref={canvasRef} className="shadow-lg" />
-    </div>
-  );
-};
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ 
   itemId, 
@@ -107,15 +50,19 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       const outline = await pdf.getOutline();
       if (outline) {
         const tocItems = await Promise.all(
-          outline.map(async (item: any) => {
+          outline.map(async (item: PDFOutlineNode) => {
+            if (typeof item.dest !== 'string') return null;
             const dest = await pdf.getDestination(item.dest);
+            if (!dest) return null;
             const pageIndex = await pdf.getPageIndex(dest[0]);
             
             let children = undefined;
             if (item.items && item.items.length > 0) {
               children = await Promise.all(
-                item.items.map(async (child: any) => {
+                item.items.map(async (child: PDFOutlineNode) => {
+                  if (typeof child.dest !== 'string') return null;
                   const childDest = await pdf.getDestination(child.dest);
+                  if (!childDest) return null;
                   const childPageIndex = await pdf.getPageIndex(childDest[0]);
                   return {
                     title: child.title,
@@ -315,9 +262,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         className="relative flex-1 w-full max-h-full overflow-auto"
       >
         {isLoading ? (
-          <Skeleton className="w-[600px] h-[800px]" />
+          <div className="flex items-center justify-center h-[800px]">
+            <LoadingSpinner size="lg" />
+          </div>
         ) : (
           <div className="flex flex-col items-center">
+            {isPageLoading && (
+              <div className="fixed top-4 right-4">
+                <LoadingSpinner size="sm" />
+              </div>
+            )}
             {Array.from(visiblePages).sort((a, b) => a - b).map((pageNum) => (
               <PDFPage
                 key={pageNum}

@@ -1,3 +1,3 @@
-import PDFViewer from "./PDFViewer";
-
-export default PDFViewer;
+export { default } from "./PDFViewer";
+export * from "./types";
+export * from "./PDFPage";
