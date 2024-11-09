@@ -69,7 +69,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   return res.status(204).send();
 }));
 
-// 改善資源讀取路由以支援 Range Request
+// 簡化資源讀取路由
 router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const resource = await itemsService.getResource(id);
@@ -80,37 +80,14 @@ router.get('/:id/resource', asyncHandler(async (req: Request, res: Response) => 
 
   const { filePath, mimeType, stats } = resource;
 
-  // 設置必要的響應頭
+  // 設置基本響應頭
   res.setHeader('Content-Type', mimeType);
-  res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.setHeader('Content-Disposition', 'inline');
+  res.setHeader('Content-Length', stats.size);
+  res.setHeader('Content-Disposition', 'attachment');
 
-  // 處理 Range Request
-  const range = req.headers.range;
-  if (range) {
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
-    const chunkSize = (end - start) + 1;
-
-    if (start >= stats.size || end >= stats.size) {
-      res.status(416).send('Requested range not satisfiable');
-      return;
-    }
-
-    res.status(206);
-    res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`);
-    res.setHeader('Content-Length', chunkSize);
-
-    const fileStream = createReadStream(filePath, { start, end });
-    fileStream.pipe(res);
-  } else {
-    // 如果不是 Range Request，發送整個文件
-    res.setHeader('Content-Length', stats.size);
-    const fileStream = createReadStream(filePath);
-    fileStream.pipe(res);
-  }
+  // 直接發送文件
+  const fileStream = createReadStream(filePath);
+  fileStream.pipe(res);
 }));
 
 // 文件操作路由
