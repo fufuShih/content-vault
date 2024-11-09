@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PDFViewer from '@/components/PDFViewer';
@@ -25,7 +25,6 @@ interface RSSEntry {
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const viewType = searchParams.get('type') || 'pdf';
   const [item, setItem] = useState<Item | null>(null);
