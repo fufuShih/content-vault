@@ -12,6 +12,19 @@ export interface PDFViewerProps {
   onTocGenerate?: (toc: TocItem[]) => void;
 }
 
+export interface PDFOutlineNode {
+  title: string;
+  bold: boolean;
+  italic: boolean;
+  color: Uint8ClampedArray;
+  dest: string | unknown[] | null;
+  url: string | null;
+  unsafeUrl: string | undefined;
+  newWindow: boolean | undefined;
+  count: number | undefined;
+  items: PDFOutlineNode[];
+}
+
 export interface PDFPageProps {
   pdfDoc: PDFDocumentProxy;
   pageNumber: number;

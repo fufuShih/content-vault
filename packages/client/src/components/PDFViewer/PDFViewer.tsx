@@ -1,24 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
-
-interface PDFOutlineNode {
-  title: string;
-  bold: boolean;
-  italic: boolean;
-  color: Uint8ClampedArray;
-  dest: string | unknown[] | null;
-  url: string | null;
-  unsafeUrl: string | undefined;
-  newWindow: boolean | undefined;
-  count: number | undefined;
-  items: PDFOutlineNode[];
-}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { debounce } from 'lodash-es';
-import { PDFViewerProps } from './types';
+import { PDFOutlineNode, PDFViewerProps } from './types';
 import { PDFPage } from './PDFPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -58,7 +45,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             
             let children = undefined;
             if (item.items && item.items.length > 0) {
-              children = await Promise.all(
+              children = (await Promise.all(
                 item.items.map(async (child: PDFOutlineNode) => {
                   if (typeof child.dest !== 'string') return null;
                   const childDest = await pdf.getDestination(child.dest);
@@ -69,7 +56,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     pageIndex: childPageIndex,
                   };
                 })
-              );
+              )).filter((child): child is { title: string; pageIndex: number; } => child !== null);
             }
 
             return {
@@ -80,7 +67,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           })
         );
         
-        onTocGenerate?.(tocItems);
+        const validTocItems = tocItems.filter((item): item is NonNullable<typeof item> => item !== null);
+        onTocGenerate?.(validTocItems);
         onOutlineLoad?.(true);
       } else {
         onOutlineLoad?.(false);
@@ -109,7 +97,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   };
 
-  useEffect(() => {
+  useEffect(() => { // Load the PDF document when the component mounts
     const loadPdf = async () => {
       try {
         setIsLoading(true);
@@ -197,7 +185,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   // Update visible pages when current page changes
   useEffect(() => {
     if (currentPage) {
-      setVisiblePages(prev => [...new Set([...prev, currentPage])].sort((a, b) => a - b));
+      setVisiblePages(prev => new Set([...new Set([...prev, currentPage])].sort((a, b) => a - b)));
     }
   }, [currentPage]);
 
