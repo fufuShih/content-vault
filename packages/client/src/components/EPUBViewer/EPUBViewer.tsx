@@ -12,8 +12,10 @@ const EPUBViewer: React.FC<EPUBViewerProps> = ({
   onTocGenerate 
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
+  const renditionRef = useRef<any>(null);
   const [book, setBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState<string>('Initializing...');
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -23,85 +25,161 @@ const EPUBViewer: React.FC<EPUBViewerProps> = ({
 
   useEffect(() => {
     const initializeReader = async () => {
+      if (!viewerRef.current) return;
+      
       try {
         setIsLoading(true);
-        const epubUrl = `http://localhost:3000/api/items/${itemId}/resource`;
-        const book = ePub(epubUrl);
+        setLoadingStatus('Fetching EPUB file...');
         
-        await book.ready;
-        setBook(book);
-
-        if (viewerRef.current) {
-          const rendition = book.renderTo(viewerRef.current, {
-            width: '100%',
-            height: '100%',
-            spread: 'none'
-          });
-
-          await rendition.display();
-
-          // Load TOC
-          const navigation = await book.navigation.load();
-          const tocItems = navigation.toc.map(item => ({
-            label: item.label,
-            href: item.href,
-            subitems: item.subitems?.map(subitem => ({
-              label: subitem.label,
-              href: subitem.href,
-            }))
-          }));
-
-          setToc(tocItems);
-          onTocGenerate?.(tocItems);
-          onOutlineLoad?.(tocItems.length > 0);
-
-          // Calculate total pages
-          const locations = await book.locations.generate(1024);
-          const totalLocs = book.locations.total;
-          setTotalPages(totalLocs);
+        const epubUrl = `/api/items/${itemId}/resource`;
+        const response = await fetch(epubUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to load EPUB: ${response.statusText}`);
         }
-      } catch (err) {
-        console.error('Error loading EPUB:', err);
-        setError('Failed to load EPUB');
-      } finally {
+
+        // Log response headers
+        console.log('Response headers:', 
+          Array.from(response.headers.entries())
+            .reduce((obj, [key, value]) => ({...obj, [key]: value}), {})
+        );
+
+        setLoadingStatus('Processing EPUB data...');
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // Log file size
+        console.log('File size:', arrayBuffer.byteLength, 'bytes');
+
+        if (arrayBuffer.byteLength === 0) {
+          throw new Error('Received empty file');
+        }
+
+        setLoadingStatus('Creating EPUB instance...');
+        const newBook = ePub();
+        
+        setLoadingStatus('Opening EPUB file...');
+        await newBook.open(arrayBuffer);
+        setBook(newBook);
+
+        setLoadingStatus('Creating viewer...');
+        const rendition = newBook.renderTo(viewerRef.current, {
+          width: '100%',
+          height: '100%',
+          spread: 'none',
+          flow: 'paginated',
+          minSpreadWidth: 1000
+        });
+        
+        renditionRef.current = rendition;
+
+        // 設置字體大小
+        rendition.hooks.content.register((contents: any) => {
+          if (contents.documentElement) {
+            contents.documentElement.style.fontSize = `${scale}%`;
+          }
+        });
+
+        setLoadingStatus('Loading content...');
+        await rendition.display();
+
+        setLoadingStatus('Loading table of contents...');
+        const navigation = await newBook.navigation.load();
+        const tocItems = navigation.toc.map((item: any) => ({
+          label: item.label,
+          href: item.href,
+          subitems: item.subitems?.map((subitem: any) => ({
+            label: subitem.label,
+            href: subitem.href,
+          }))
+        }));
+
+        setToc(tocItems);
+        onTocGenerate?.(tocItems);
+        onOutlineLoad?.(tocItems.length > 0);
+
+        setLoadingStatus('Generating pages...');
+        await newBook.locations.generate(1024);
+        setTotalPages(newBook.locations.total || 1);
+
+        rendition.on('relocated', (location: any) => {
+          const page = newBook.locations.locationFromCfi(location.start.cfi);
+          setCurrentPage(page || 0);
+        });
+
         setIsLoading(false);
+        setLoadingStatus('');
+
+      } catch (err) {
+        console.error('Error initializing EPUB reader:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize EPUB reader');
+        setLoadingStatus('Error occurred');
       }
     };
 
     initializeReader();
 
     return () => {
+      if (renditionRef.current) {
+        try {
+          renditionRef.current.destroy();
+        } catch (e) {
+          console.warn('Error cleaning up rendition:', e);
+        }
+      }
       if (book) {
-        book.destroy();
+        try {
+          book.destroy();
+        } catch (e) {
+          console.warn('Error cleaning up book:', e);
+        }
       }
     };
   }, [itemId, onOutlineLoad, onTocGenerate]);
+
+  // Scale change effect
+  useEffect(() => {
+    if (renditionRef.current) {
+      renditionRef.current.hooks.content.clear();
+      renditionRef.current.hooks.content.register((contents: any) => {
+        if (contents.documentElement) {
+          contents.documentElement.style.fontSize = `${scale}%`;
+        }
+      });
+      renditionRef.current.reload();
+    }
+  }, [scale]);
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 10, 50));
 
   const goToNextPage = () => {
-    if (book && book.rendition) {
-      book.rendition.next();
-      setCurrentPage(prev => Math.min(prev + 1, totalPages - 1));
+    if (renditionRef.current) {
+      renditionRef.current.next();
     }
   };
 
   const goToPrevPage = () => {
-    if (book && book.rendition) {
-      book.rendition.prev();
-      setCurrentPage(prev => Math.max(prev - 1, 0));
+    if (renditionRef.current) {
+      renditionRef.current.prev();
     }
   };
 
   const goToLocation = (href: string) => {
-    if (book && book.rendition) {
-      book.rendition.display(href);
+    if (renditionRef.current) {
+      renditionRef.current.display(href);
     }
   };
 
   if (error) {
-    return <div className="text-red-500 p-4">{error}</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-500 p-4">
+          <p className="font-semibold">Error loading EPUB</p>
+          <p className="text-sm mt-2">{error}</p>
+          <p className="text-xs mt-1 text-gray-500">Last status: {loadingStatus}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -123,18 +201,20 @@ const EPUBViewer: React.FC<EPUBViewerProps> = ({
               variant="outline"
               size="icon"
               onClick={goToPrevPage}
-              disabled={currentPage <= 0}
+              disabled={currentPage <= 0 || isLoading}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <span>{currentPage + 1} / {totalPages}</span>
+            <span className="min-w-[80px] text-center">
+              {currentPage + 1} / {totalPages}
+            </span>
 
             <Button
               variant="outline"
               size="icon"
               onClick={goToNextPage}
-              disabled={currentPage >= totalPages - 1}
+              disabled={currentPage >= totalPages - 1 || isLoading}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -145,16 +225,16 @@ const EPUBViewer: React.FC<EPUBViewerProps> = ({
               variant="outline"
               size="icon"
               onClick={handleZoomOut}
-              disabled={scale <= 50}
+              disabled={scale <= 50 || isLoading}
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span>{scale}%</span>
+            <span className="min-w-[60px] text-center">{scale}%</span>
             <Button
               variant="outline"
               size="icon"
               onClick={handleZoomIn}
-              disabled={scale >= 200}
+              disabled={scale >= 200 || isLoading}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -178,18 +258,16 @@ const EPUBViewer: React.FC<EPUBViewerProps> = ({
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 bg-white">
           {isLoading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full gap-4">
               <LoadingSpinner size="lg" />
+              <p className="text-sm text-gray-500">{loadingStatus}</p>
             </div>
           ) : (
             <div 
               ref={viewerRef}
-              className="h-full"
-              style={{
-                fontSize: `${scale}%`
-              }}
+              className="h-full w-full"
             />
           )}
         </div>
