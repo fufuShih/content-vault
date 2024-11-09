@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:server": "pnpm --filter server run dev",
+    "start:client": "pnpm --filter client run dev"
   },
   "keywords": [],
   "author": "",
