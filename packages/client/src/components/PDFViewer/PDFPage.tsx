@@ -89,7 +89,11 @@ export const PDFPage: React.FC<PDFPageProps> = ({ pdfDoc, pageNumber, scale, onV
   }, [pdfDoc, pageNumber, scale]);
 
   return (
-    <div ref={ref} className="relative mb-4">
+    <div 
+      ref={ref}
+      data-page={pageNumber}
+      className="relative mb-4"
+    >
       {isLoading && (
         <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
           <LoadingSpinner size="md" />

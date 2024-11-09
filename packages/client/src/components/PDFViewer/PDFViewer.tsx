@@ -88,18 +88,33 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
 
-  const goToPage = (pageNum: number) => {
+  const scrollToPage = useCallback((pageNum: number) => {
+    const pageElement = document.querySelector(`[data-page="${pageNum}"]`);
+    if (pageElement && containerRef.current) {
+      pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  const goToPage = useCallback((pageNum: number) => {
     const page = Math.max(1, Math.min(pageNum, totalPages));
     setCurrentPage(page);
     setInputPage(page.toString());
-  };
+    scrollToPage(page);
+  }, [totalPages, scrollToPage]);
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputPage(value);
-    const pageNum = parseInt(value);
-    if (!isNaN(pageNum)) {
-      goToPage(pageNum);
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const pageNum = parseInt(inputPage);
+      if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+        goToPage(pageNum);
+      } else {
+        setInputPage(currentPage.toString());
+      }
     }
   };
 
@@ -231,6 +246,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 type="text"
                 value={inputPage}
                 onChange={handlePageInputChange}
+                onKeyDown={handlePageInputKeyDown}
                 className="w-16 text-center"
               />
               <span>/ {totalPages}</span>

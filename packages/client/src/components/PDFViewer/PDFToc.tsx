@@ -19,10 +19,10 @@ const PDFToc: React.FC<PDFTocProps> = ({ outline, currentPage, onPageChange }) =
   const renderTocItem = (item: TOCItem, level: number = 0) => (
     <div key={`${item.title}-${item.pageIndex}`} className="flex flex-col">
       <button
-        onClick={() => onPageChange(item.pageIndex)}
+        onClick={() => onPageChange(item.pageIndex)} // 加 1 轉換為實際頁碼
         className={cn(
           "flex items-center text-sm py-1 px-2 hover:bg-accent rounded",
-          currentPage === item.pageIndex && "bg-accent",
+          currentPage === item.pageIndex + 1 && "bg-accent",
           level > 0 && "ml-4"
         )}
       >
