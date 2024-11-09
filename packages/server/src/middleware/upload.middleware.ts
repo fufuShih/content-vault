@@ -4,12 +4,10 @@ import { Request } from 'express';
 import crypto from 'crypto';
 import fs from 'fs/promises';
 
-// Constants
 export const FILE_CONSTANTS = {
-  MAX_FILE_SIZE: 10 * 1024 * 1024,
+  MAX_FILE_SIZE: 2 * 1024 * 1024 * 1024, // 2GB
   MAX_FILES: 10,
-  ALLOWED_TYPES: ['application/pdf'] as const,
-  // 修改上傳目錄路徑，使用項目根目錄
+  ALLOWED_TYPES: ['application/pdf', 'application/epub+zip'] as const,
   UPLOAD_DIR: path.join(process.cwd(), 'uploads')
 } as const;
 
