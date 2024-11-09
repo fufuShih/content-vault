@@ -3,7 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface TOCItem {
+export interface TOCItem {
   pageIndex: number;
   title: string;
   children?: TOCItem[];

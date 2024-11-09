@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PDFViewer from '@/components/PDFViewer';
 import RSSViewer, { RSSEntry } from '@/components/RSSViewer';
-import PDFToc from '@/components/PDFToc';
+import PDFToc, { TOCItem } from '@/components/PDFToc';
 import { Menu } from "lucide-react";
 
 interface Item {
@@ -22,7 +22,7 @@ const CollectionDetailPage = () => {
   const viewType = searchParams.get('type') || 'pdf';
   const [item, setItem] = useState<Item | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [pdfOutline, setPdfOutline] = useState<any[]>([]);
+  const [pdfOutline, setPdfOutline] = useState<TOCItem[]>([]);
   const [rssEntries, setRssEntries] = useState<RSSEntry[]>([]);
   const [hasOutline, setHasOutline] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
