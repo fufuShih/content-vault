@@ -3,11 +3,12 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Minus, Plus, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import { debounce } from 'lodash-es';
 import { PDFOutlineNode, PDFViewerProps } from './types';
 import { PDFPage } from './PDFPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import PDFToc, { TOCItem } from './PDFToc';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.min.mjs';
 
@@ -27,6 +28,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [inputPage, setInputPage] = useState('1');
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]));
   const containerRef = useRef<HTMLDivElement>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [hasOutline, setHasOutline] = useState(false);
+  const [pdfOutline, setPdfOutline] = useState<TOCItem[]>([]);
 
   const getPdfUrl = useCallback(() => {
     return `http://localhost:3000/api/items/${itemId}/resource`;
@@ -70,6 +74,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         const validTocItems = tocItems.filter((item): item is NonNullable<typeof item> => item !== null);
         onTocGenerate?.(validTocItems);
         onOutlineLoad?.(true);
+        setPdfOutline(validTocItems);
+        setHasOutline(true);
       } else {
         onOutlineLoad?.(false);
       }
@@ -194,83 +200,111 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col items-center">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="h-full flex flex-col">
+      <div className="h-16 border-b flex items-center px-4 gap-4 bg-background">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage <= 1}
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         </Button>
         
         <div className="flex items-center gap-2">
-          <Input
-            type="text"
-            value={inputPage}
-            onChange={handlePageInputChange}
-            className="w-16 text-center"
-          />
-          <span>/ {totalPages}</span>
-        </div>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center gap-2 ml-4">
           <Button
             variant="outline"
             size="icon"
-            onClick={handleZoomOut}
-            disabled={scale <= 0.5}
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage <= 1}
           >
-            <Minus className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span>{Math.round(scale * 100)}%</span>
+          
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              value={inputPage}
+              onChange={handlePageInputChange}
+              className="w-16 text-center"
+            />
+            <span>/ {totalPages}</span>
+          </div>
+
           <Button
             variant="outline"
             size="icon"
-            onClick={handleZoomIn}
-            disabled={scale >= 3}
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= totalPages}
           >
-            <Plus className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
+
+          <div className="flex items-center gap-2 ml-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomOut}
+              disabled={scale <= 0.5}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span>{Math.round(scale * 100)}%</span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomIn}
+              disabled={scale >= 3}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div 
-        ref={containerRef}
-        className="relative flex-1 w-full max-h-full overflow-auto"
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center h-[800px]">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center">
-            {isPageLoading && (
-              <div className="fixed top-4 right-4">
-                <LoadingSpinner size="sm" />
+      <div className="flex-1 flex overflow-hidden">
+        <div 
+          className={`border-r bg-background transition-all ${
+            sidebarCollapsed ? 'w-0' : 'w-64'
+          }`}
+        >
+          {!sidebarCollapsed && hasOutline && (
+            <PDFToc 
+              outline={pdfOutline}
+              currentPage={currentPage}
+              onPageChange={(pageIndex) => goToPage(pageIndex + 1)}
+            />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div 
+            ref={containerRef}
+            className="relative flex-1 w-full max-h-full overflow-auto"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center h-[800px]">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                {isPageLoading && (
+                  <div className="fixed top-4 right-4">
+                    <LoadingSpinner size="sm" />
+                  </div>
+                )}
+                {Array.from(visiblePages).sort((a, b) => a - b).map((pageNum) => (
+                  <PDFPage
+                    key={pageNum}
+                    pdfDoc={pdfDoc!}
+                    pageNumber={pageNum}
+                    scale={scale}
+                    onVisible={() => handlePageVisible(pageNum)}
+                  />
+                ))}
               </div>
             )}
-            {Array.from(visiblePages).sort((a, b) => a - b).map((pageNum) => (
-              <PDFPage
-                key={pageNum}
-                pdfDoc={pdfDoc!}
-                pageNumber={pageNum}
-                scale={scale}
-                onVisible={() => handlePageVisible(pageNum)}
-              />
-            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
