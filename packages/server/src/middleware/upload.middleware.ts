@@ -7,7 +7,7 @@ import fs from 'fs/promises';
 export const FILE_CONSTANTS = {
   MAX_FILE_SIZE: 2 * 1024 * 1024 * 1024, // 2GB
   MAX_FILES: 10,
-  ALLOWED_TYPES: ['application/pdf', 'application/epub+zip'] as const,
+  ALLOWED_TYPES: ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'] as const,
   UPLOAD_DIR: path.join(process.cwd(), 'uploads')
 } as const;
 
