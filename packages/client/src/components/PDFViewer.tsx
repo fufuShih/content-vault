@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocumentProxy } from 'pdfjs-dist';
+import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
 import { Skeleton } from "@/components/ui/skeleton";
 import PDFToc from './PDFToc';
 
@@ -23,8 +23,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.5);
-
+  const scale = 1.5;
   const getPdfUrl = () => {
     return `http://localhost:3000/api/items/${itemId}/resource`;
   };
@@ -35,15 +34,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       if (outline) {
         const tocItems = await Promise.all(
           outline.map(async (item: any) => {
-            let dest = await pdf.getDestination(item.dest);
-            let pageIndex = await pdf.getPageIndex(dest[0]);
+            const dest = await pdf.getDestination(item.dest);
+            const pageIndex = await pdf.getPageIndex(dest[0]);
             
             let children = undefined;
             if (item.items && item.items.length > 0) {
               children = await Promise.all(
                 item.items.map(async (child: any) => {
-                  let childDest = await pdf.getDestination(child.dest);
-                  let childPageIndex = await pdf.getPageIndex(childDest[0]);
+                  const childDest = await pdf.getDestination(child.dest);
+                  const childPageIndex = await pdf.getPageIndex(childDest[0]);
                   return {
                     title: child.title,
                     pageIndex: childPageIndex,
