@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu } from 'lucide-react';
+import { Menu, Volume2, VolumeX } from 'lucide-react';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 
@@ -114,6 +114,8 @@ interface PDFToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onInputPageChange: (value: string) => void;
+  isPlaying: boolean;
+  onTtsToggle: () => void;
 }
 
 export const PDFToolbar: React.FC<PDFToolbarProps> = ({
@@ -127,6 +129,8 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
   onZoomIn,
   onZoomOut,
   onInputPageChange,
+  isPlaying,
+  onTtsToggle,
 }) => {
   return (
     <div className="h-16 border-b flex items-center px-4 bg-background">
@@ -156,7 +160,20 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
         />
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onTtsToggle}
+          aria-label={isPlaying ? 'Stop reading' : 'Start reading'}
+        >
+          {isPlaying ? (
+            <VolumeX className="h-5 w-5" />
+          ) : (
+            <Volume2 className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

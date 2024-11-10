@@ -7,6 +7,7 @@ import PDFToc from './PDFToc';
 import { usePDFDocument } from './usePDFDocument';
 import { usePDFNavigation } from './usePDFNavigation';
 import { PDFToolbar } from './PDFToolbar';
+import { useTTS } from './useTTS';
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ 
   itemId, 
@@ -14,6 +15,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onTocGenerate 
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [pageText, setPageText] = useState<string>('');
+  const { isPlaying, speak, stop } = useTTS();
   const {
     isLoading,
     error,
@@ -52,13 +55,35 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, 100);
 
+  const handleTtsToggle = async () => {
+    if (isPlaying) {
+      stop();
+    } else if (pdfDoc) {
+      if (!pageText) {
+        const page = await pdfDoc.getPage(currentPage);
+        const textContent = await page.getTextContent();
+        const text = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        setPageText(text);
+        speak(text);
+      } else {
+        speak(pageText);
+      }
+    }
+  };
+
+  useEffect(() => {
+    setPageText('');
+  }, [currentPage]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, [handleScroll]);
+  }, [containerRef, handleScroll]);
 
   if (error) {
     return <div className="text-red-500 p-4">{error}</div>;
@@ -77,6 +102,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onInputPageChange={setInputPage}
+        isPlaying={isPlaying}
+        onTtsToggle={handleTtsToggle}
       />
 
       {/* Rest of the component remains the same */}
