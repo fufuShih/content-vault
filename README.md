@@ -1,6 +1,6 @@
 # Content Vault
 
-Content Vault is a secure content management system that allows users to store and manage their digital content efficiently.
+A secure, modern content management system for efficient digital content storage and management.
 
 ## Features
 
@@ -12,6 +12,12 @@ Content Vault is a secure content management system that allows users to store a
 - 🏷️ Content tagging and categorization
 - 📊 Content analytics
 - 🔗 Sharing capabilities
+
+## Prerequisites
+
+- Node.js 18 or higher
+- pnpm package manager
+- PostgreSQL database
 
 ## Project Structure
 
@@ -27,14 +33,10 @@ Content Vault is a secure content management system that allows users to store a
 
 ## Requirements
 
-- Node.js 16+
-- MongoDB
-- npm or yarn
+- Node.js 18+
+- pnpm
+- postgresql
 
 ## Contributing
 
 Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
