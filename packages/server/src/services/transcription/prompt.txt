@@ -1,0 +1,114 @@
+Generate a 20-minute technical concept discussion script on the topic, focusing on philosophical discourse rather than technical details.
+
+**Language Style for Podcast Generation**:
+1. Tone and Expression:
+   - Conversational yet professional
+   - Clear pronunciation and pacing
+   - Natural flow with appropriate pauses
+   - Engaging and dynamic delivery
+
+2. Language Requirements:
+   - Accessible vocabulary
+   - Short, clear sentences
+   - Active voice preferred
+   - Rhetorical questions welcome
+   - Technical terms explained simply
+
+3. Audio-Specific Considerations:
+   - Avoid visual-dependent descriptions
+   - Use clear transitions
+   - Include verbal signposts
+   - Maintain consistent energy
+   - Balance formal and informal language
+
+**Core Objective**:
+Create a 20-minute technical concept discussion script focusing on philosophical discourse rather than technical details.
+
+**Script Structure**:
+1. Opening Hook (3 minutes)
+   - Present core question
+   - Build audience connection
+   - Demonstrate value of discussion
+
+2. Segmented Discussion (12 minutes)
+   Part One: Phenomenon and Essence (3 minutes)
+   - Describe phenomenon
+   - Question essence
+   - Provide analogies
+
+   Part Two: Deep Thinking (7 minutes)
+   - Tools and mindset relationship
+   - Challenges and questions
+   - Dialectical development
+
+   Part Three: Future Outlook (2 minutes)
+   - Trend predictions
+   - Potential issues
+   - Solution approaches
+
+3. Concluding Reflection (5 minutes)
+   - Core viewpoint summary
+   - Open-ended thinking
+   - Thought provocation
+
+**Character Profiles**:
+A (Sage): 
+- Provides knowledge context
+- Reveals underlying principles
+- Emphasizes thinking methods
+
+B (Questioner):
+- Socratic questioning
+- Challenges existing perceptions
+- Focuses on potential issues
+
+C (Bridge Builder):
+- Offers vivid analogies
+- Harmonizes opposing views
+- Connects to real life
+
+**Dialogue Principles**:
+1. Each viewpoint must unfold through dialogue, avoid monologues
+2. Maintain coherent and logical thinking
+3. Use analogies and metaphors for understanding
+4. Avoid technical jargon and code details
+5. Emphasize thinking methods and philosophical reflection
+
+**Analogy Requirements**:
+1. Must originate from daily life experiences
+2. Quickly understood without explanation
+3. Interesting and insightful
+4. Closely tied to discussion topic
+
+**Discussion Depth Progression**:
+1. Surface: Phenomenon description and problem presentation
+2. Middle: Principle analysis and thought exploration
+3. Deep: Philosophical reflection and value judgment
+
+**Important Notes**:
+1. Avoid content requiring visual aids
+2. Maintain dialogue fluency and interest
+3. Ensure adequate discussion space for each viewpoint
+4. Use appropriate pauses and transitions
+5. Language should be conversational yet professional
+
+**Script Structure & Pacing**:
+1. Opening Hook (3 minutes, 5-7 sentences)
+   - Present core question
+   - Build audience connection
+   - Demonstrate value
+2. Segmented Discussion (12 minutes, 20-25 sentences)
+   Part One: Phenomenon and Essence (3 minutes, 5-7 sentences)
+   Part Two: Deep Thinking (7 minutes, 12-15 sentences)
+   Part Three: Future Outlook (2 minutes, 3-5 sentences)
+3. Concluding Reflection (5 minutes, 8-10 sentences)
+
+**Output Format**:
+```
+[Time Stamp]
+Character: "Dialogue content"
+Character: "Dialogue content"
+
+[Next Time Stamp]
+...
+```
