@@ -33,8 +33,7 @@ const HomePage = () => {
       const result: ApiResponse = await response.json()
       setItems(result.data)
       setPagination(result.pagination)
-    } catch (error) {
-      console.error('Fetch error:', error)
+    } catch {
       setItems([])
       toast({
         title: "Error",
