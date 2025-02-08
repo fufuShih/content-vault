@@ -96,7 +96,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         totalPages={totalPages}
         scale={scale}
         inputPage={inputPage}
-        sidebarCollapsed={sidebarCollapsed}
         onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onPageChange={goToPage}
         onZoomIn={handleZoomIn}

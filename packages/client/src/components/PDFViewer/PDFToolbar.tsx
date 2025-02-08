@@ -108,7 +108,6 @@ interface PDFToolbarProps {
   totalPages: number;
   scale: number;
   inputPage: string;
-  sidebarCollapsed: boolean;
   onSidebarToggle: () => void;
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
@@ -123,7 +122,6 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
   totalPages,
   scale,
   inputPage,
-  sidebarCollapsed,
   onSidebarToggle,
   onPageChange,
   onZoomIn,
